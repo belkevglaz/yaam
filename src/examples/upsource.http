@@ -1,0 +1,42 @@
+
+###  ReviewCreatedFeedEventBean
+POST http://localhost:4000/api/v1/upsource/hooks
+Content-Type: application/json;charset=utf-8
+
+{
+  "majorVersion": 2020,
+  "minorVersion": 1,
+  "projectId": "micro-workspaces",
+  "dataType": "ReviewCreatedFeedEventBean",
+  "data":
+  {
+    "base":
+    {
+      "userIds":
+      [
+        {
+          "userId": "d61e7b88-7dd5-4f4d-a045-3fbfdba62d01",
+          "userName": "Иван Аксенов",
+          "userEmail": "iaksenov@everytag.ru"
+        }
+      ],
+      "reviewNumber": 8,
+      "reviewId": "MW-CR-8",
+      "date": 1646839251959,
+      "actor":
+      {
+        "userId": "d61e7b88-7dd5-4f4d-a045-3fbfdba62d01",
+        "userName": "Иван Аксенов",
+        "userEmail": "iaksenov@everytag.ru"
+      },
+      "feedEventId": "1646839251960#micro-workspaces#7743c518-e146-47ed-a762-16269b6baed3"
+    },
+    "revisions":
+    [
+      "4c34ae3bfe1d49b73fe0fdf47bc9327fdcad5bb8"
+    ],
+    "branch": "develop"
+  }
+}
+
+###
