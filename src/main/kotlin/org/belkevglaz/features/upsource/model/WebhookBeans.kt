@@ -2,19 +2,10 @@ package org.belkevglaz.features.upsource.model
 
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
-import kotlinx.serialization.modules.*
 
-
-@ExperimentalSerializationApi
-val module = SerializersModule {
-	polymorphic(EventBean::class) {
-		subclass(ReviewCreatedFeedEventBean::class)
-		subclass(ParticipantStateChangedFeedEventBean::class)
-	}
-}
 
 /**
- * Base Jetbrains Upsource Event bean.
+ * Base Jetbrains Upsource Event webhook beans.
  *
  * @author <a href="mailto:belkevlaz@gmail.com">Aksenov Ivan</a>
  * @since 0.0.1

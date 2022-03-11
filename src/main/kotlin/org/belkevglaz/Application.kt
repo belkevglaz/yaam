@@ -27,7 +27,7 @@ fun Application.main(koinModules: List<Module> = listOf(appKoinModule)) {
 
 	install(ContentNegotiation) {
 		json(Json {
-			serializersModule = org.belkevglaz.features.upsource.model.module
+			serializersModule = org.belkevglaz.features.serialization.module
 			ignoreUnknownKeys = true
 		})
 	}

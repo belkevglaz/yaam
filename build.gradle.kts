@@ -20,10 +20,18 @@ repositories {
 }
 
 dependencies {
-	// ktor core deps
+	// ktor server
 	implementation("io.ktor:ktor-server-core:$ktor_version")
 	implementation("io.ktor:ktor-server-netty:$ktor_version")
 	implementation("io.ktor:ktor-locations:$ktor_version")
+
+	// ktor client
+	implementation("io.ktor:ktor-client-core:$ktor_version")
+	implementation("io.ktor:ktor-client-cio:$ktor_version")
+	implementation("io.ktor:ktor-client-auth:$ktor_version")
+	implementation("io.ktor:ktor-client-serialization:$ktor_version")
+	implementation("io.ktor:ktor-client-logging:$ktor_version")
+
 
 	// web
 	implementation("io.ktor:ktor-html-builder:$ktor_version")
