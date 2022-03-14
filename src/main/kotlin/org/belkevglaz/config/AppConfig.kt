@@ -27,7 +27,7 @@ class AppConfig {
 /**
  * Data config class for Upsource integration.
  */
-data class UpsourceConfig(val url: String, val username: String, val password: String)
+data class UpsourceConfig(val url: String, val username: String, val password: String, val botId: String)
 
 data class Project(val name: String, val alias: String?, val nobot: Boolean? = false)
 
@@ -41,7 +41,8 @@ fun Application.setupConfig() {
 		appConfig.upsource = UpsourceConfig(
 			it.property("url").getString(),
 			it.property("username").getString(),
-			it.property("password").getString()
+			it.property("password").getString(),
+			it.property("botId").getString()
 		)
 	}
 

@@ -10,24 +10,23 @@ import kotlinx.html.*
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 import org.belkevglaz.config.*
-import org.koin.core.module.*
-import org.koin.dsl.*
+import org.belkevglaz.di.*
 import org.koin.ktor.ext.*
 import org.koin.logger.*
+import org.slf4j.*
+import org.slf4j.LoggerFactory.*
 
 
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
-val appKoinModule = module {
-	single { AppConfig() }
-}
+fun <T : Any> T.logger(): Logger = getLogger(javaClass)
 
 @ExperimentalSerializationApi
-fun Application.main(koinModules: List<Module> = listOf(appKoinModule)) {
+fun Application.main() {
 
 	install(ContentNegotiation) {
 		json(Json {
-			serializersModule = org.belkevglaz.features.serialization.module
+			serializersModule = org.belkevglaz.features.serialization.serialize
 			ignoreUnknownKeys = true
 		})
 	}
@@ -36,7 +35,7 @@ fun Application.main(koinModules: List<Module> = listOf(appKoinModule)) {
 
 	install(Koin) {
 		slf4jLogger()
-		modules(koinModules)
+		modules(appKoinModule)
 	}
 
 	// populate config

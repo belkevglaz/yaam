@@ -1,7 +1,7 @@
 # Gradle
-.gradle/
+.gradle/*
 gradle/
-build/
+build/*
 
 # Eclipse
 .project
@@ -35,3 +35,7 @@ nb-configuration.xml
 
 # lombok auto generated
 lombok.config
+
+# ignore dev artifacts
+*-dev.*
+
