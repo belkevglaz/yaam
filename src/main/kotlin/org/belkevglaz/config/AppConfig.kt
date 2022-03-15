@@ -21,15 +21,34 @@ class AppConfig {
 	 */
 	lateinit var projects: List<Project>
 
+	lateinit var teamcity: TeamcityConfig
+
 }
+
+/**
+ * Configuration of TeamCity. Pass [url], [username] and [password].
+ *
+ * @property url        hostname and port
+ * @property username   login
+ * @property password   password
+ */
+data class TeamcityConfig(val url: String, val username: String, val password: String)
 
 
 /**
  * Data config class for Upsource integration.
+ *
  */
-data class UpsourceConfig(val url: String, val username: String, val password: String, val botId: String)
+data class UpsourceConfig(
+	val url: String, val username: String, val password: String,
+	val branchRegexp: String = "", val taskRegexp: String = "",
+)
 
-data class Project(val name: String, val alias: String?, val nobot: Boolean? = false)
+/**
+ *
+ */
+data class Project(val id: String, val alias: String? = null, val nobot: Boolean? = false)
+
 
 /**
  * [Application] extension that populating config with custom properties.
@@ -37,19 +56,28 @@ data class Project(val name: String, val alias: String?, val nobot: Boolean? = f
 fun Application.setupConfig() {
 	val appConfig by inject<AppConfig>()
 
+	environment.config.config("ktor.teamcity").also {
+		appConfig.teamcity = TeamcityConfig(
+			it.property("url").getString(),
+			it.property("username").getString(),
+			it.property("password").getString()
+		)
+	}
+
 	environment.config.config("ktor.upsource").also {
 		appConfig.upsource = UpsourceConfig(
 			it.property("url").getString(),
 			it.property("username").getString(),
 			it.property("password").getString(),
-			it.property("botId").getString()
+			it.property("branchRegexp").getString(),
+			it.property("taskRegExp").getString(),
 		)
 	}
 
 	appConfig.projects = environment.config.config("ktor.projects").configList("all")
 		.map { c ->
 			Project(
-				c.property("name").getString(),
+				c.property("id").getString(),
 				c.propertyOrNull("alias")?.getString(),
 				c.propertyOrNull("nobot")?.getString().toBoolean())
 		}

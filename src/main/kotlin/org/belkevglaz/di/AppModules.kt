@@ -2,6 +2,7 @@ package org.belkevglaz.di
 
 import kotlinx.serialization.*
 import org.belkevglaz.config.*
+import org.belkevglaz.features.teamcity.*
 import org.belkevglaz.features.upsource.*
 import org.koin.dsl.*
 
@@ -16,4 +17,6 @@ val appKoinModule = module {
 	single { AppConfig() }
 	single { UpsourceClient(get()) }
 	single { UpsourceService(get()) }
+
+	single { TeamcityApiClient(get())}
 }

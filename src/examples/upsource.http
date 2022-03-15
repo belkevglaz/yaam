@@ -40,4 +40,4 @@ Content-Type: application/json;charset=utf-8
 }
 
 ### Upsource Test GET CALL
-GET http://localhost:4000/api/v1/upsource/hooks
+GET http://localhost:4000/api/v1/upsource/test

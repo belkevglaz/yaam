@@ -81,18 +81,18 @@ data class Base(
 data class User(val userId: String, val userName: String, val userEmail: String)
 
 /**
- * Data Payload of [ReviewCreatedFeedEventBean].
+ * Payload of [ReviewCreatedFeedEventBean].
  */
 @Serializable
 data class ReviewCreatedFeedEventBeanData(
 	override val base: Base,
-	val revisions: List<String>,
-	val branch: String,
+	val revisions: List<String>? = null,
+	val branch: String? = null,
 ) : EventBeanData()
 
 
 /**
- * Data Payload of [ParticipantStateChangedFeedEventBean].
+ * Payload of [ParticipantStateChangedFeedEventBean].
  */
 @Serializable
 data class ParticipantStateChangedFeedEventBeanData(

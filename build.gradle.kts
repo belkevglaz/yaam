@@ -17,6 +17,10 @@ application {
 
 repositories {
 	mavenCentral()
+	maven {
+		url = uri("https://packages.jetbrains.team/maven/p/teamcity-rest-client/teamcity-rest-client")
+		name = "JetBrains Repo"
+	}
 }
 
 dependencies {
@@ -38,8 +42,11 @@ dependencies {
 //	implementation("io.ktor:ktor-jackson:$ktor_version")
 	implementation("io.ktor:ktor-serialization:$ktor_version")
 
-	// mongodb
-//	implementation("org.litote.kmongo:kmongo-coroutine:4.5.0")
+	// teamcity support api client
+	implementation("org.jetbrains.teamcity:teamcity-rest-client:1.17.1")
+
+	// logging
+	implementation("io.github.microutils:kotlin-logging-jvm:2.1.20")
 
 
 	implementation("ch.qos.logback:logback-classic:$logback_version")

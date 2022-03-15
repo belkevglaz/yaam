@@ -1,0 +1,10 @@
+### TeamCity hook test
+
+POST localhost:4000/api/v1/teamcity/hooks
+Content-Type: application/json
+
+{
+  "buildId": 41359,
+  "branchName": "feature/check-teamcity-pr-3",
+  "projectAlias": "micro-workspaces"
+}
