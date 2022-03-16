@@ -1,7 +1,6 @@
 # Gradle
-.gradle/*
-gradle/
-build/*
+.gradle/
+build/
 
 # Eclipse
 .project
@@ -10,7 +9,7 @@ build/*
 bin/
 
 # IntelliJ
-.idea/
+.idea
 *.ipr
 *.iml
 *.iws
@@ -35,7 +34,3 @@ nb-configuration.xml
 
 # lombok auto generated
 lombok.config
-
-# ignore dev artifacts
-*-dev.*
-
