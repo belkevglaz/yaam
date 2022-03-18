@@ -1,16 +1,16 @@
 package org.belkevglaz.routing
 
 import io.ktor.application.*
-import io.ktor.http.*
 import io.ktor.request.*
 import io.ktor.response.*
 import io.ktor.routing.*
+import kotlinx.coroutines.*
 import kotlinx.serialization.*
+import kotlinx.serialization.json.*
 import mu.*
 import org.belkevglaz.config.*
 import org.belkevglaz.features.teamcity.*
 import org.belkevglaz.features.upsource.*
-import org.belkevglaz.features.upsource.model.*
 import org.koin.ktor.ext.*
 
 
@@ -41,20 +41,50 @@ fun Routing.teamcityWebhook() {
 
 	val upsource: UpsourceService by inject()
 
-	post("/teamcity/hooks") {
+	// webhooks to handle TeamCity Common Build status publisher's events.
+	post("/teamcity/publisher/~buildStatus") {
+		val request = call.receive<PublisherBuildStatus>()
+
+		val json = Json {
+			allowStructuredMapKeys = true
+		}
+
+		logger.info { json.encodeToString(request) }
+
+		when (request.state) {
+			"failed" -> call.respondText { "Ok" }
+			"success" -> launch {
+				val readyToClose = upsource.buildReadyToCloseReviews(request)
+
+				upsource.closeReviews(readyToClose)
+
+			}
+		}
+		call.respondText { "Ok" }
+
+	}
+
+	// webhook own custom events from TeamCity.
+/*	post("/teamcity/hooks") {
 
 		val request = call.receive<TeamcityHookRequest>()
-		logger.info("Received hook from teamcity. BuildId [${request.buildId}] " +
-				"for project [${request.projectAlias}] and branch [${request.branchName}]")
 
-		// find related review by branch.
-		val reviews = upsource.findRelatedReviews(request.projectAlias, request.branchName)
+		if (request.type.equals(TeamCityEventType.BUILD_COMPLETE)) {
 
-		logger.info { "Found for [${request.branchName}] ${reviews.size} reviews: " + reviews.joinToString { r -> r.reviewId.reviewId } }
-//		upsource.checkReviews(reviews)
+			// find related review by branch.
+			val reviews = upsource.findRelatedReviews(request.projectAliasId, request.branchName)
+
+			logger.info {
+				" 🔎 Found ${reviews.size} reviews for [${request.branchName}] related reviews: "
+					.plus(reviews.joinToString { r -> r.reviewId.reviewId })
+			}
+			// now check review that successfully builded and ready to close.
+			upsource.checkReviewsToClose(reviews)
+
+		}
 
 		call.respond(HttpStatusCode.OK)
-	}
+	}*/
 }
 
 /**
@@ -71,10 +101,9 @@ fun Routing.upsourceWebhook() {
 
 	get("/upsource/hooks") {
 		call.respondText { "Upsource hook get Ok" }
-		client.getOpenedReviews(Project("ild", alias = "backend"))
 	}
 
-	post("/upsource/hooks") {
+/*	post("/upsource/hooks") {
 		val event = call.receive<EventBean>()
 		logger.info { "Received ${event.dataType}" }
 
@@ -83,12 +112,7 @@ fun Routing.upsourceWebhook() {
 		}
 
 		call.respondText { "Ok" }
-	}
-
-	get("/upsource/test") {
-		client.getRevisionsListFiltered(null)
-		call.respondText { "Ok" }
-	}
+	}*/
 
 
 }
@@ -101,12 +125,19 @@ fun Routing.admin() {
 
 	get("/admin/recheck") {
 
-		val reviews = upsource.getOpenedReviews("ild")
+		val projectId = "micro-workspaces"
+		val reviews = upsource.fetchReviews(projectId, false)
 
-		reviews.groupBy(
+		// before getting build statuses, waits some interval to able upsource
+//		reviews.map {
+//			it.revisions = upsource.fetchRevisionInReview(it.reviewId)
+//			logger.info { "Review [${it.reviewId.reviewId}] has revisions count = ${it.revisions.size ?: 0}" }
+//		}
+
+/*		reviews.groupBy(
 			keySelector = { appConfig.upsource.taskRegexp.toRegex().find(it.commonBranch)?.value },
 			valueTransform = { it.reviewId.reviewId }
-		).forEach { (k, v) -> logger.info { "Task [$k] :" + v.joinToString() } }
+		).forEach { (k, v) -> logger.info { "Task [$k] :" + v.joinToString() } }*/
 
 //		logger.info { reviews.groupingBy { appConfig.upsource.taskRegexp.toRegex().find(it.commonBranch)?.value } }
 		call.respondText { "Ok" }

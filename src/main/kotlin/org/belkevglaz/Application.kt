@@ -28,6 +28,7 @@ fun Application.main() {
 		json(Json {
 			serializersModule = org.belkevglaz.features.serialization.serialize
 			ignoreUnknownKeys = true
+			allowStructuredMapKeys = true
 		})
 	}
 
@@ -60,5 +61,6 @@ fun Application.main() {
 			}
 		}
 	}
+
 
 }

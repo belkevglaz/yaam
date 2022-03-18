@@ -15,9 +15,7 @@ Content-Type: application/json;charset=utf-8
       "userIds":
       [
         {
-          "userId": "d61e7b88-7dd5-4f4d-a045-3fbfdba62d01",
-          "userName": "Иван Аксенов",
-          "userEmail": "iaksenov@everytag.ru"
+          "userId": "d61e7b88-7dd5-4f4d-a045-3fbfdba62d01"
         }
       ],
       "reviewNumber": 8,
@@ -25,9 +23,7 @@ Content-Type: application/json;charset=utf-8
       "date": 1646839251959,
       "actor":
       {
-        "userId": "d61e7b88-7dd5-4f4d-a045-3fbfdba62d01",
-        "userName": "Иван Аксенов",
-        "userEmail": "iaksenov@everytag.ru"
+        "userId": "d61e7b88-7dd5-4f4d-a045-3fbfdba62d01"
       },
       "feedEventId": "1646839251960#micro-workspaces#7743c518-e146-47ed-a762-16269b6baed3"
     },

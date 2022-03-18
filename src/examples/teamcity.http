@@ -4,7 +4,35 @@ POST localhost:4000/api/v1/teamcity/hooks
 Content-Type: application/json
 
 {
-  "buildId": 41359,
-  "branchName": "feature/check-teamcity-pr-3",
-  "projectAlias": "micro-workspaces"
+  "buildId": 41437,
+  "branchName": "feature/ILD-9999-issue-new",
+  "projectAliasId": "micro-workspaces",
+  "type": "BUILD_COMPLETE"
 }
+
+### Commit Publisher - Upsource '/~buildStatus' = FAILURE
+POST localhost:4000/api/teamcity/publisher/~buildStatus
+Content-Type: application/json
+
+{
+    "revisionDate": 1647509577000,
+    "name": "/ micro.workspaces / Test Pull Request #51",
+    "revisionMessage": " --- 5.txt\n",
+    "project": "micro-workspaces",
+    "description": "Build started",
+    "state": "failed",
+    "url": "http:///viewLog.html?buildId=41470&buildTypeId=TestPullRequest",
+    "revision": "234e71867f9878792324242315af64cc72d2976d"
+}
+
+### Commit Publisher - Upsource '/~buildStatus' = SUCCESS
+POST localhost:4000/api/teamcity/publisher/~buildStatus
+Content-Type: application/json
+
+{"revisionDate":1647509577000,"name":"/ micro.workspaces / Test Pull Request #53","revisionMessage":" --- 5.txt\n","project":"micro-workspaces","description":"Success","state":"success","url":"http:///viewLog.html?buildId=41504&buildTypeId=TestPullRequest","revision":"234e71867f9878792324242315af64cc72d2976d"}
+
+### Commit Publisher - Upsource '/~buildStatus' = SUCCESS RELATED
+POST localhost:4000/api/teamcity/publisher/~buildStatus
+Content-Type: application/json
+
+{"revisionDate":1647438698000,"name":"/ micro.workspaces / Test Pull Request #57","revisionMessage":" --- 22.txt\n","project":"micro-workspaces","description":"Build started","state":"success","url":"http:///viewLog.html?buildId=41508&buildTypeId=TestPullRequest","revision":"37c34cca3d3c74b02c921e3d1603e2b726dbc273"}

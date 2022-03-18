@@ -47,7 +47,7 @@ data class UpsourceConfig(
 /**
  *
  */
-data class Project(val id: String, val alias: String? = null, val nobot: Boolean? = false)
+data class Project(val id: String)
 
 
 /**
@@ -76,10 +76,7 @@ fun Application.setupConfig() {
 
 	appConfig.projects = environment.config.config("ktor.projects").configList("all")
 		.map { c ->
-			Project(
-				c.property("id").getString(),
-				c.propertyOrNull("alias")?.getString(),
-				c.propertyOrNull("nobot")?.getString().toBoolean())
+			Project(c.property("id").getString())
 		}
 
 	println(appConfig.projects)

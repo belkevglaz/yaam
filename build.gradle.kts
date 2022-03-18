@@ -35,7 +35,8 @@ dependencies {
 	implementation("io.ktor:ktor-client-auth:$ktor_version")
 	implementation("io.ktor:ktor-client-serialization:$ktor_version")
 	implementation("io.ktor:ktor-client-logging:$ktor_version")
-
+	// support date serialization
+	implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.2")
 
 	// web
 	implementation("io.ktor:ktor-html-builder:$ktor_version")
