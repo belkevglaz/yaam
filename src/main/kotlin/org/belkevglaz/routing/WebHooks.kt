@@ -26,9 +26,9 @@ fun Application.webhooks() {
 
 	routing {
 		teamcityWebhook()
-		upsourceWebhook()
+/*		upsourceWebhook()
 
-		admin()
+		admin()*/
 	}
 }
 
@@ -46,84 +46,72 @@ fun Routing.teamcityWebhook() {
 
 	val config: AppConfig by inject()
 
-	// webhooks to handle TeamCity Common Build status publisher's events.
-	post("/teamcity/publisher/~buildStatus") {
-		val request = call.receive<PublisherBuildStatus>()
-
-		val json = Json {
-			allowStructuredMapKeys = true
+	route("/teamcity/publisher") {
+		// webhooks to handle TeamCity Common Build status publisher's events.
+		get("/~rpc/getCurrentUser") {
+			call.respondText { "Ok" }
 		}
 
-		logger.info { json.encodeToString(request) }
+		post("/~buildStatusTestConnection") {
+			call.respondText { "Ok" }
+		}
 
-		when (request.state) {
-			"failed" -> call.respondText { "Ok" }
-			"success" -> {
-				val readyToClose = upsource.buildReadyToCloseReviews(request)
+		post("/~buildStatus") {
+			val request = call.receive<PublisherBuildStatus>()
 
-				// for all reviews - project the same
-				var reviewsAndPulls: Map<ReviewDescriptorDTO, Set<PullRequestShortInfo>>
-				config.projects.firstOrNull { it.review.id == readyToClose.first().reviewId.projectId }
-					?.let { project ->
+			val json = Json {
+				allowStructuredMapKeys = true
+			}
 
-						// join pulls to reviews
-						reviewsAndPulls = readyToClose.associateWith {
-							bitbucket.fetchPullRequestByCommitId(project,
-								it.revisions.first().revisionId)
-						}
+			logger.info { json.encodeToString(request) }
 
-						// check that all reviews has a pull request. If any not - reject all
-						if (reviewsAndPulls.any { it.value.isEmpty() }) {
-							logger.info {
-								"❌ Not all reviews has pull requests :" + reviewsAndPulls.map { (k, v) -> "[${k.reviewId.reviewId}] -> [${v.joinToString { vv -> vv.id }}]" }
-									.joinToString { it }
+			when (request.state) {
+				"failed" -> call.respondText { "Ok" }
+				"success" -> {
+					val readyToClose = upsource.buildReadyToCloseReviews(request)
+
+					// for all reviews - project the same
+					var reviewsAndPulls: Map<ReviewDescriptorDTO, Set<PullRequestShortInfo>>
+					config.projects.firstOrNull { it.review.id == readyToClose.firstOrNull()?.reviewId?.projectId }
+						?.let { project ->
+
+							// join pulls to reviews
+							reviewsAndPulls = readyToClose.associateWith {
+								bitbucket.fetchPullRequestByCommitId(project,
+									it.revisions.first().revisionId)
 							}
-						} else {
-							logger.info { "Request and pulls : \n" + json.encodeToString(reviewsAndPulls) }
 
-							// start to merge and close synchronously
-							launch {
-								reviewsAndPulls.forEach { (review, pulls) ->
+							// check that all reviews has a pull request. If any not - reject all
+							if (reviewsAndPulls.any { it.value.isEmpty() }) {
+								logger.info {
+									"❌ Not all reviews has pull requests :" + reviewsAndPulls.map { (k, v) -> "[${k.reviewId.reviewId}] -> [${v.joinToString { vv -> vv.id }}]" }
+										.joinToString { it }
+								}
+							} else {
+								logger.info { "Request and pulls : \n" + json.encodeToString(reviewsAndPulls) }
 
-									pulls.map { pull ->
-										bitbucket.mergePullRequest(project, pull.id).also { response ->
-											logger.info { "PullRequest [${pull.id}] merged on ${response?.closedOn}" }
+								// start to merge and close synchronously
+								launch {
+									reviewsAndPulls.forEach { (review, pulls) ->
+
+										pulls.map { pull ->
+											bitbucket.mergePullRequest(project, pull.id).also { response ->
+												logger.info { "PullRequest [${pull.id}] merged on ${response?.closedOn}" }
+											}
 										}
-									}
-									upsource.closeReviews(setOf(review))
+										upsource.closeReviews(setOf(review))
 
+									}
 								}
 							}
 						}
-					}
 
+				}
 			}
-		}
-		call.respondText { "Ok" }
+			call.respondText { "Ok" }
 
+		}
 	}
-
-	// webhook own custom events from TeamCity.
-/*	post("/teamcity/hooks") {
-
-		val request = call.receive<TeamcityHookRequest>()
-
-		if (request.type.equals(TeamCityEventType.BUILD_COMPLETE)) {
-
-			// find related review by branch.
-			val reviews = upsource.findRelatedReviews(request.projectAliasId, request.branchName)
-
-			logger.info {
-				" 🔎 Found ${reviews.size} reviews for [${request.branchName}] related reviews: "
-					.plus(reviews.joinToString { r -> r.reviewId.reviewId })
-			}
-			// now check review that successfully builded and ready to close.
-			upsource.checkReviewsToClose(reviews)
-
-		}
-
-		call.respond(HttpStatusCode.OK)
-	}*/
 }
 
 /**
@@ -131,7 +119,7 @@ fun Routing.teamcityWebhook() {
  *
  * @author <a href="mailto:belkevlaz@gmail.com">Aksenov Ivan</a>
  */
-@ExperimentalSerializationApi
+/*@ExperimentalSerializationApi
 fun Routing.upsourceWebhook() {
 
 	val client: UpsourceClient by inject()
@@ -142,7 +130,7 @@ fun Routing.upsourceWebhook() {
 		call.respondText { "Upsource hook get Ok" }
 	}
 
-/*	post("/upsource/hooks") {
+*//*	post("/upsource/hooks") {
 		val event = call.receive<EventBean>()
 		logger.info { "Received ${event.dataType}" }
 
@@ -151,11 +139,12 @@ fun Routing.upsourceWebhook() {
 		}
 
 		call.respondText { "Ok" }
-	}*/
+	}*//*
 
 
-}
+}*/
 
+/*
 @ExperimentalSerializationApi
 fun Routing.admin() {
 
@@ -173,13 +162,16 @@ fun Routing.admin() {
 //			logger.info { "Review [${it.reviewId.reviewId}] has revisions count = ${it.revisions.size ?: 0}" }
 //		}
 
+*/
 /*		reviews.groupBy(
 			keySelector = { appConfig.upsource.taskRegexp.toRegex().find(it.commonBranch)?.value },
 			valueTransform = { it.reviewId.reviewId }
-		).forEach { (k, v) -> logger.info { "Task [$k] :" + v.joinToString() } }*/
+		).forEach { (k, v) -> logger.info { "Task [$k] :" + v.joinToString() } }*//*
+
 
 //		logger.info { reviews.groupingBy { appConfig.upsource.taskRegexp.toRegex().find(it.commonBranch)?.value } }
 		call.respondText { "Ok" }
 	}
 
 }
+*/
