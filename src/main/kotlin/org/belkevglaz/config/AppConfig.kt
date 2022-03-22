@@ -16,12 +16,11 @@ class AppConfig {
 	 */
 	lateinit var upsource: UpsourceConfig
 
-	/**
-	 *
-	 */
-	lateinit var projects: List<Project>
-
 	lateinit var teamcity: TeamcityConfig
+
+	lateinit var vcs: VcsConfig
+
+	lateinit var projects: List<Project>
 
 }
 
@@ -34,21 +33,15 @@ class AppConfig {
  */
 data class TeamcityConfig(val url: String, val username: String, val password: String)
 
+data class UpsourceConfig(val url: String, val username: String, val password: String, val branchRegexp: String = "", val taskRegexp: String = "")
 
-/**
- * Data config class for Upsource integration.
- *
- */
-data class UpsourceConfig(
-	val url: String, val username: String, val password: String,
-	val branchRegexp: String = "", val taskRegexp: String = "",
-)
+data class VcsConfig(val baseUrl: String, val username: String, val password: String)
 
-/**
- *
- */
-data class Project(val id: String)
+data class Project(val vcs: ProjectVcs, val review: ProjectReview)
 
+data class ProjectVcs(val workspace: String, val repo: String)
+
+data class ProjectReview(val id: String)
 
 /**
  * [Application] extension that populating config with custom properties.
@@ -57,11 +50,9 @@ fun Application.setupConfig() {
 	val appConfig by inject<AppConfig>()
 
 	environment.config.config("ktor.teamcity").also {
-		appConfig.teamcity = TeamcityConfig(
-			it.property("url").getString(),
+		appConfig.teamcity = TeamcityConfig(it.property("url").getString(),
 			it.property("username").getString(),
-			it.property("password").getString()
-		)
+			it.property("password").getString())
 	}
 
 	environment.config.config("ktor.upsource").also {
@@ -70,13 +61,24 @@ fun Application.setupConfig() {
 			it.property("username").getString(),
 			it.property("password").getString(),
 			it.property("branchRegexp").getString(),
-			it.property("taskRegExp").getString(),
+			it.property("taskRegexp").getString(),
 		)
 	}
 
-	appConfig.projects = environment.config.config("ktor.projects").configList("all")
-		.map { c ->
-			Project(c.property("id").getString())
+
+	environment.config.config("ktor.vcs").also {
+		appConfig.vcs = VcsConfig(
+			it.property("baseUrl").getString(),
+			it.property("username").getString(),
+			it.property("password").getString()
+		)
+	}
+
+	appConfig.projects = environment.config.config("ktor.projects").configList("all").map { c ->
+			val vcs = c.config("vcs")
+			val review = c.config("review")
+			Project(ProjectVcs(vcs.property("workspace").getString(), vcs.property("repo").getString()),
+				ProjectReview(review.property("id").getString()))
 		}
 
 	println(appConfig.projects)

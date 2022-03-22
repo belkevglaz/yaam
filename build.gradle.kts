@@ -46,6 +46,9 @@ dependencies {
 	// teamcity support api client
 	implementation("org.jetbrains.teamcity:teamcity-rest-client:1.17.1")
 
+//	 bitbucket
+//	implementation("org.bitbucket.dpenkin:bitbucket-cloud-rest-client:4.0.3")
+
 	// logging
 	implementation("io.github.microutils:kotlin-logging-jvm:2.1.20")
 

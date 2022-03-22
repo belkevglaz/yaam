@@ -11,6 +11,8 @@ import mu.*
 import org.belkevglaz.config.*
 import org.belkevglaz.features.teamcity.*
 import org.belkevglaz.features.upsource.*
+import org.belkevglaz.features.upsource.model.*
+import org.belkevglaz.features.vcs.*
 import org.koin.ktor.ext.*
 
 
@@ -40,6 +42,9 @@ fun Routing.teamcityWebhook() {
 
 
 	val upsource: UpsourceService by inject()
+	val bitbucket: BitbucketService by inject()
+
+	val config: AppConfig by inject()
 
 	// webhooks to handle TeamCity Common Build status publisher's events.
 	post("/teamcity/publisher/~buildStatus") {
@@ -53,10 +58,44 @@ fun Routing.teamcityWebhook() {
 
 		when (request.state) {
 			"failed" -> call.respondText { "Ok" }
-			"success" -> launch {
+			"success" -> {
 				val readyToClose = upsource.buildReadyToCloseReviews(request)
 
-				upsource.closeReviews(readyToClose)
+				// for all reviews - project the same
+				var reviewsAndPulls: Map<ReviewDescriptorDTO, Set<PullRequestShortInfo>>
+				config.projects.firstOrNull { it.review.id == readyToClose.first().reviewId.projectId }
+					?.let { project ->
+
+						// join pulls to reviews
+						reviewsAndPulls = readyToClose.associateWith {
+							bitbucket.fetchPullRequestByCommitId(project,
+								it.revisions.first().revisionId)
+						}
+
+						// check that all reviews has a pull request. If any not - reject all
+						if (reviewsAndPulls.any { it.value.isEmpty() }) {
+							logger.info {
+								"❌ Not all reviews has pull requests :" + reviewsAndPulls.map { (k, v) -> "[${k.reviewId.reviewId}] -> [${v.joinToString { vv -> vv.id }}]" }
+									.joinToString { it }
+							}
+						} else {
+							logger.info { "Request and pulls : \n" + json.encodeToString(reviewsAndPulls) }
+
+							// start to merge and close synchronously
+							launch {
+								reviewsAndPulls.forEach { (review, pulls) ->
+
+									pulls.map { pull ->
+										bitbucket.mergePullRequest(project, pull.id).also { response ->
+											logger.info { "PullRequest [${pull.id}] merged on ${response?.closedOn}" }
+										}
+									}
+									upsource.closeReviews(setOf(review))
+
+								}
+							}
+						}
+					}
 
 			}
 		}

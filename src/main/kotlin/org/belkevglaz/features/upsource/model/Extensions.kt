@@ -27,5 +27,15 @@ fun ReviewDescriptorDTO.readyToClose(): Boolean = run {
 
 	buildResult == 1 && isReadyToClose == true
 }.also {
-	logger.info { "(ReadyToClose) Review [${this.reviewId.reviewId}] to close? : ${it.toString().uppercase()}" }
+	if (it.not()) {
+		val lastRevision = revisions.maxByOrNull { revision -> revision.revisionDate }
+		logger.info {
+			"(ReadyToClose) Review [${this.reviewId.reviewId}] failed revision [${
+				lastRevision?.revisionCommitMessage?.replace("\n",
+					" ")
+			}]"
+		}
+	} else {
+		logger.info { "(ReadyToClose) Review [${this.reviewId.reviewId}] to close? : ${it.toString().uppercase()}" }
+	}
 }
