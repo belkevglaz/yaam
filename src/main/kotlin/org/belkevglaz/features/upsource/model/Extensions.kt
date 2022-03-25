@@ -33,7 +33,7 @@ fun ReviewDescriptorDTO.readyToClose(): Boolean = run {
 			"(ReadyToClose) Review [${this.reviewId.reviewId}] failed revision [${
 				lastRevision?.revisionCommitMessage?.replace("\n",
 					" ")
-			}]"
+			}] and readyToClose [${this.isReadyToClose}]"
 		}
 	} else {
 		logger.info { "(ReadyToClose) Review [${this.reviewId.reviewId}] to close? : ${it.toString().uppercase()}" }

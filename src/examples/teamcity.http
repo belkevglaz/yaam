@@ -8,7 +8,7 @@ Content-Type: application/json
 
 {
   "buildId": 41437,
-  "branchName": "feature/ILD-9999-issue-new",
+  "branchName": "feature/RCP-9999-issue-new",
   "projectAliasId": "micro-workspaces",
   "type": "BUILD_COMPLETE"
 }
@@ -48,12 +48,12 @@ POST localhost:4000/api/teamcity/publisher/~buildStatus
 Content-Type: application/json
 
 {
-  "revisionDate": 1647438698000,
-  "name": "/ micro.workspaces / Test Pull Request #57",
-  "revisionMessage": " --- 22.txt\n",
+  "revisionDate": 1648110333000,
+  "name": "ILD / 1. Development / Test / / UI Pull Requests Tests #4",
+  "revisionMessage": "Merge branch 'develop' into feature/RCP-1111-adn\n",
   "project": "micro-workspaces",
-  "description": "Build started",
+  "description": "Success",
   "state": "success",
-  "url": "http:///viewLog.html?buildId=41508&buildTypeId=TestPullRequest",
-  "revision": "37c34cca3d3c74b02c921e3d1603e2b726dbc273"
+  "url": "http://base/viewLog.html?buildId=41761&buildTypeId=FrontendUnitTest_PullRequestsTests",
+  "revision": "50b5f775a546f8a7177121d1ee9669ba99c2573d"
 }

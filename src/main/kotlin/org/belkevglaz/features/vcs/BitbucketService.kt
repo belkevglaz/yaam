@@ -23,7 +23,7 @@ class BitbucketService(appConfig: AppConfig) : KoinComponent {
 
 	suspend fun fetchPullRequestByCommitId(project: Project, revisionId: String): Set<PullRequestShortInfo> =
 		client.pullRequestByCommit(PullRequestByCommitRequest(project.vcs.workspace,
-			"micro.workspaces",
+			project.vcs.repo,
 			revisionId))?.values ?: emptySet()
 
 	suspend fun mergePullRequest(project: Project, pullId: String): PullRequestMergeResponse? =

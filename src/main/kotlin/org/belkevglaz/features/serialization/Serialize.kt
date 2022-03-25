@@ -13,7 +13,7 @@ import org.belkevglaz.features.upsource.model.*
 @ExperimentalSerializationApi
 val serialize = SerializersModule {
 	polymorphic(EventBean::class) {
-		subclass(ReviewCreatedFeedEventBean::class)
-		subclass(ParticipantStateChangedFeedEventBean::class)
+//		subclass(ReviewCreatedFeedEventBean::class)
+		subclass(ParticipantStateChangedFeedEventBeanCommon::class)
 	}
 }

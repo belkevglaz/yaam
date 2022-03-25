@@ -32,19 +32,20 @@ open class UpsourceClient(appConfig: AppConfig) {
 
 	companion object {
 		const val GET_REVIEWS = "/~rpc/getReviews"
-		const val ADD_PARTICIPANT = "/~rpc/addParticipantToReview"
+		const val GET_REVIEW_DETAILS = "/~rpc/getReviewDetails"
 		const val GET_REVISION_LIST = "/~rpc/getRevisionsListFiltered"
 		const val GET_REVISION_IN_REVIEW = "/~rpc/getRevisionsInReview"
 		const val GET_REVISION_BUILD_STATUS = "/~rpc/getRevisionBuildStatus"
 		const val GET_REVISION_BRANCHES = "/~rpc/getRevisionBranches"
 		const val GET_REVISION_REVIEW_INFO = "/~rpc/getRevisionReviewInfo"
 		const val CLOSE_REVIEW = "/~rpc/closeReview"
+		const val FIND_COMMITS = "/~rpc/findCommits"
 	}
 
 	private val client = HttpClient(CIO) {
 		install(Logging) {
 			logger = Logger.DEFAULT
-			level = LogLevel.NONE
+			level = LogLevel.BODY
 		}
 
 
@@ -94,17 +95,29 @@ open class UpsourceClient(appConfig: AppConfig) {
 			null
 		}
 
-	/**
-	 * Returns the list of branches a revision is part of.
-	 */
-	suspend fun getRevisionBranches(request: RevisionInProjectDTO): RevisionBranchesResponseDTO? =
-		getRpc<RevisionBranchesResponseResultDTO>(request, GET_REVISION_BRANCHES)?.result
+
+	suspend fun getReviewDetails(request: ReviewIdDTO) =
+		getRpc<ReviewDescriptorDTOResult>(request, GET_REVIEW_DETAILS)?.result
+
 
 	/**
 	 * Returns the list of reviews
 	 */
 	suspend fun getReviews(request: ReviewsRequestDTO): Set<ReviewDescriptorDTO> =
 		getRpc<ReviewsResponse>(request, GET_REVIEWS)?.result?.reviews ?: emptySet()
+
+
+	/**
+	 * Returns short review information for a set of revisions
+	 */
+	suspend fun getRevisionReviewInfo(request: RevisionListDTO): RevisionReviewInfoListDTO? =
+		getRpc<RevisionReviewInfoListDTOResult>(request, GET_REVISION_REVIEW_INFO)?.result
+
+	/**
+	 * Returns the list of branches a revision is part of.
+	 */
+	suspend fun getRevisionBranches(request: RevisionInProjectDTO): RevisionBranchesResponseDTO? =
+		getRpc<RevisionBranchesResponseResultDTO>(request, GET_REVISION_BRANCHES)?.result
 
 
 	/**
@@ -120,6 +133,12 @@ open class UpsourceClient(appConfig: AppConfig) {
 	 */
 	suspend fun getRevisionBuildStatus(request: RevisionListDTO): Set<RevisionBuildStatusDTO> =
 		getRpc<BuildStatusResponse>(request, GET_REVISION_BUILD_STATUS)?.result?.buildStatus ?: emptySet()
+
+	/**
+	 * Finds commit(s) with the given commit hash.
+	 */
+	suspend fun findCommits(request: FindCommitsRequestDTO): Set<FindCommitsResponseCommitsDTO> =
+		getRpc<FindCommitsResponseResult>(request, FIND_COMMITS)?.result?.commits ?: emptySet()
 
 	/**
 	 * Closes a review.

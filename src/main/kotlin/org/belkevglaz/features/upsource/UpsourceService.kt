@@ -21,12 +21,26 @@ private val json = Json {
 	allowStructuredMapKeys = true
 }
 
+@Suppress("MemberVisibilityCanBePrivate")
 @ExperimentalSerializationApi
 class UpsourceService(appConfig: AppConfig) : KoinComponent {
 
 	private val config = appConfig
 
 	private val client by inject<UpsourceClient>()
+
+
+	/**
+	 * Retrieve review by review Id.
+	 *
+	 * @param reviewId Review Id
+	 * @param readyToClose flag to get or not reviews that are ready to close
+	 */
+	suspend fun fetchReviewById(reviewId: String, readyToClose: Boolean = true): ReviewDescriptorDTO {
+		val query =
+			(if (readyToClose) "state: open and #{ready to close}" else "state: open").plus(" and id: $reviewId")
+		return client.getReviews(ReviewsRequestDTO(query = query)).first()
+	}
 
 	/**
 	 *  Retrieve reviews (ready to close or not) from Upsource project.
@@ -36,9 +50,33 @@ class UpsourceService(appConfig: AppConfig) : KoinComponent {
 	 */
 	suspend fun fetchReviews(projectId: String, readyToClose: Boolean): Set<ReviewDescriptorDTO> {
 		val query = if (readyToClose) "state: open and #{ready to close}" else "state: open"
-		val sortBy = """""sortBy": "id,desc""""
 
-		return client.getReviews(ReviewsRequestDTO(30, query, sortBy, projectId, null))
+		return client.getReviews(ReviewsRequestDTO(query = query, projectId = projectId)).also {
+			logger.info { "Found [${it.size}] reviews that ready [$readyToClose] to close: ${it.joinToString { r -> r.reviewId.reviewId }}" }
+		}
+	}
+
+	/**
+	 * Retrieve review from project with [projectId] and that has given commitId [commitId].
+	 */
+	suspend fun fetchReviewsByCommitId(
+		projectId: String,
+		commitId: String,
+		readyToClose: Boolean = true,
+	): Set<ReviewDescriptorDTO> {
+		// first we need to retrieve revision relates with this commit
+		val commits = client.findCommits(FindCommitsRequestDTO(FindCommitsRequestPatternDTO(commitId, projectId)))
+
+		val revisionIds = commits.flatMap {
+			it.commits?.map { c -> c.revision.revisionId }?.toSet() ?: emptySet()
+		}
+
+		return client.getRevisionReviewInfo(RevisionListDTO(projectId, revisionIds.toSet()))?.reviewInfo
+			?.mapNotNull { client.getReviewDetails(it.reviewInfo.reviewId) }?.toSet()
+			.also {
+				logger.info { "Found [${it?.size}] reviews that ready [$readyToClose] to close: ${it?.joinToString { r -> r.reviewId.reviewId }}] by revision [${commitId}]" }
+			} ?: emptySet()
+
 	}
 
 	/**
@@ -46,7 +84,7 @@ class UpsourceService(appConfig: AppConfig) : KoinComponent {
 	 *
 	 * Let's assume that the branch part (issue tracker task number) is the same.
 	 */
-	suspend fun findRelatedReview(review: ReviewDescriptorDTO): List<ReviewDescriptorDTO> {
+	private suspend fun relatedReviews(review: ReviewDescriptorDTO): List<ReviewDescriptorDTO> {
 
 		if (review.branches().size > 1) {
 			logger.warn { "Attention!. Review [${review.reviewId.reviewId}] contains more than 1 branches." }
@@ -77,45 +115,60 @@ class UpsourceService(appConfig: AppConfig) : KoinComponent {
 		}
 	}
 
+
+	/**
+	 * Flat set of given [reviews] themselves and related.
+	 */
+	private suspend fun relatedReviews(reviews: Set<ReviewDescriptorDTO>): Set<ReviewDescriptorDTO> =
+		reviews.map { it to relatedReviews(it) }.flatMap { p -> setOf(p.first).union(p.second) }.toSet()
+
+	/**
+	 * Join revisions to given [review].
+	 */
+	private suspend fun joinRevisionToReview(review: ReviewDescriptorDTO): ReviewDescriptorDTO =
+		review.apply { revisions = client.getRevisionInReview(review.reviewId) }
+
+	/**
+	 * Join revisions to set of [reviews].
+	 */
+	suspend fun joinRevisionsToReviews(reviews: Set<ReviewDescriptorDTO>): Set<ReviewDescriptorDTO> =
+		reviews.map { joinRevisionToReview(it) }.toSet()
+
+	/**
+	 *  Join build states to revisions in given [review].
+	 */
+	private suspend fun joinRevisionsBuilds(review: ReviewDescriptorDTO): ReviewDescriptorDTO =
+		review.apply {
+			// convert revisions into set of
+			val request = RevisionListDTO(review.reviewId.projectId, revisions.map { rev -> rev.revisionId }.toSet())
+			buildStatuses = client.getRevisionBuildStatus(request)
+		}
+
+
 	/**
 	 * todo :
 	 */
-	suspend fun buildReadyToCloseReviews(publisherBuildStatus: PublisherBuildStatus): Set<ReviewDescriptorDTO> {
+	suspend fun processBuildStatus(status: PublisherBuildStatus): Set<ReviewDescriptorDTO> {
 
-		// find ready to close reviews, related reviews and join revisions.
-		val readyToCloseWithRelated = fetchReviews(publisherBuildStatus.project, true)
-			.map { review ->
-				// join revisions to reviews
-				review.apply { revisions = client.getRevisionInReview(review.reviewId) }
+		val reviewsByCommit = fetchReviewsByCommitId(status.project, status.revision)
 
-			}.also {
-				logger.info { "Found [${it.size} reviews that ready to close: ${it.joinToString { r -> r.reviewId.reviewId }}]" }
-			}.filter {
-				// filter review that has given revision. Use sorted revisions and check most recent (first)
-				it.revisions.isNotEmpty() && it.revisions.firstOrNull()?.revisionId == publisherBuildStatus.revision
-			}.also {
-				logger.info { "Filter reviews with revision [${publisherBuildStatus.revision}]. There are ${it.size} reviews left." }
-			}.map {
-				// join related reviews with theirs revisions.
-				(it to findRelatedReview(it).map { related ->
-					related.apply { revisions = client.getRevisionInReview(related.reviewId) }
-				}).also {
-					logger.info { "Review [${it.first.reviewId.reviewId}] has related [${it.second.joinToString { rr -> rr.reviewId.reviewId }}]" }
-				}
-			}.map {
-				// join revision build statuses for related reviews
-				it.apply {
-					second.map { related -> joinRevisionsBuilds(related) }
-				}
-			}.filter {
-				// all related reviews are ready to close.
-				it.second.all { related -> related.readyToClose() }
-			}.flatMap { r ->
-				setOf(r.first).union(r.second)
-			}.toSet()
+		return readyToCloseReviews(reviewsByCommit)
+	}
 
-		logger.debug { "Completely ready to close reviews: \n" + json.encodeToString(readyToCloseWithRelated) }
-		return readyToCloseWithRelated
+	/**
+	 * Get related review and related.
+	 * Return set of review only if all reviews are read to close.
+	 */
+	private suspend fun readyToCloseReviews(reviews: Set<ReviewDescriptorDTO>): Set<ReviewDescriptorDTO> {
+		val readyToClose = relatedReviews(reviews)
+			.map { joinRevisionToReview(it) }
+			.map { joinRevisionsBuilds(it) }.toSet()
+
+		return if (readyToClose.all { it.readyToClose() }) readyToClose.also {
+			logger.debug { "Completely ready to close reviews: \n" + json.encodeToString(it) }
+		} else {
+			emptySet()
+		}
 	}
 
 
@@ -130,17 +183,20 @@ class UpsourceService(appConfig: AppConfig) : KoinComponent {
 				}
 		}
 
-	/**
-	 *  todo :
-	 */
-	private suspend fun joinRevisionsBuilds(review: ReviewDescriptorDTO): ReviewDescriptorDTO =
-		review.apply {
-			// join revisions build statuses to related review
-			val buildsRequest = RevisionListDTO(review.reviewId.projectId,
-				revisions.map { rev -> rev.revisionId }.toSet())
-			buildStatuses = client.getRevisionBuildStatus(buildsRequest)
-		}
 
+	/**
+	 * Processing participant state change to accept.
+	 */
+	suspend fun processParticipantStateChange(event: ParticipantStateChangedFeedEventBean): Set<ReviewDescriptorDTO> {
+
+		if (event.newState != 2) return emptySet()
+
+		val review = fetchReviewById(event.base.reviewId ?: "")
+
+		return readyToCloseReviews(setOf(review))
+
+
+	}
 }
 
 

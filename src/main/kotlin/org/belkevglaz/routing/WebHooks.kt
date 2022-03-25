@@ -26,9 +26,9 @@ fun Application.webhooks() {
 
 	routing {
 		teamcityWebhook()
-/*		upsourceWebhook()
+		upsourceWebhook()
 
-		admin()*/
+//		admin()
 	}
 }
 
@@ -66,45 +66,10 @@ fun Routing.teamcityWebhook() {
 			logger.info { json.encodeToString(request) }
 
 			when (request.state) {
-				"failed" -> call.respondText { "Ok" }
 				"success" -> {
-					val readyToClose = upsource.buildReadyToCloseReviews(request)
+					val readyToClose = upsource.processBuildStatus(request)
 
-					// for all reviews - project the same
-					var reviewsAndPulls: Map<ReviewDescriptorDTO, Set<PullRequestShortInfo>>
-					config.projects.firstOrNull { it.review.id == readyToClose.firstOrNull()?.reviewId?.projectId }
-						?.let { project ->
-
-							// join pulls to reviews
-							reviewsAndPulls = readyToClose.associateWith {
-								bitbucket.fetchPullRequestByCommitId(project,
-									it.revisions.first().revisionId)
-							}
-
-							// check that all reviews has a pull request. If any not - reject all
-							if (reviewsAndPulls.any { it.value.isEmpty() }) {
-								logger.info {
-									"❌ Not all reviews has pull requests :" + reviewsAndPulls.map { (k, v) -> "[${k.reviewId.reviewId}] -> [${v.joinToString { vv -> vv.id }}]" }
-										.joinToString { it }
-								}
-							} else {
-								logger.info { "Request and pulls : \n" + json.encodeToString(reviewsAndPulls) }
-
-								// start to merge and close synchronously
-								launch {
-									reviewsAndPulls.forEach { (review, pulls) ->
-
-										pulls.map { pull ->
-											bitbucket.mergePullRequest(project, pull.id).also { response ->
-												logger.info { "PullRequest [${pull.id}] merged on ${response?.closedOn}" }
-											}
-										}
-										upsource.closeReviews(setOf(review))
-
-									}
-								}
-							}
-						}
+					Finalizer().finalizeReviews(readyToClose)
 
 				}
 			}
@@ -119,10 +84,9 @@ fun Routing.teamcityWebhook() {
  *
  * @author <a href="mailto:belkevlaz@gmail.com">Aksenov Ivan</a>
  */
-/*@ExperimentalSerializationApi
+@ExperimentalSerializationApi
 fun Routing.upsourceWebhook() {
 
-	val client: UpsourceClient by inject()
 	val service: UpsourceService by inject()
 
 
@@ -130,19 +94,26 @@ fun Routing.upsourceWebhook() {
 		call.respondText { "Upsource hook get Ok" }
 	}
 
-*//*	post("/upsource/hooks") {
+	post("/upsource/hooks") {
+
 		val event = call.receive<EventBean>()
 		logger.info { "Received ${event.dataType}" }
+		launch {
+			when (event) {
+				is ParticipantStateChangedFeedEventBeanCommon -> {
 
-		if (event is ReviewCreatedFeedEventBean) {
-			service.processCreateReviewEvent(event)
+					val readyToClose = service.processParticipantStateChange(event.data)
+
+					Finalizer().finalizeReviews(readyToClose)
+				}
+			}
 		}
 
 		call.respondText { "Ok" }
-	}*//*
+	}
 
 
-}*/
+}
 
 /*
 @ExperimentalSerializationApi

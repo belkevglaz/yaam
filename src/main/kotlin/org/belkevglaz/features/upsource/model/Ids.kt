@@ -10,6 +10,15 @@ import kotlinx.serialization.*
  */
 
 /**
+ * Review id POJO. See a [Upsource API Reference](~api_doc/reference/Ids.html#messages.ReviewIdDTO)
+ *
+ * @property projectId Project ID in Upsource.
+ * @property reviewId Review ID assigned to it when it's created.
+ */
+@Serializable
+data class ReviewIdDTO(val projectId: String, val reviewId: String)
+
+/**
  * [RevisionInProjectDTO](http://base/~api_doc/reference/Ids.html#messages.RevisionInProjectDTO)
  *
  * @property projectId Project ID in Upsource

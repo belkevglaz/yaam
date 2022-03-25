@@ -8,12 +8,9 @@ Content-Type: application/json;charset=utf-8
   "minorVersion": 1,
   "projectId": "micro-workspaces",
   "dataType": "ReviewCreatedFeedEventBean",
-  "data":
-  {
-    "base":
-    {
-      "userIds":
-      [
+  "data": {
+    "base": {
+      "userIds": [
         {
           "userId": "d61e7b88-7dd5-4f4d-a045-3fbfdba62d01"
         }
@@ -21,17 +18,52 @@ Content-Type: application/json;charset=utf-8
       "reviewNumber": 8,
       "reviewId": "MW-CR-8",
       "date": 1646839251959,
-      "actor":
-      {
+      "actor": {
         "userId": "d61e7b88-7dd5-4f4d-a045-3fbfdba62d01"
       },
       "feedEventId": "1646839251960#micro-workspaces#7743c518-e146-47ed-a762-16269b6baed3"
     },
-    "revisions":
-    [
+    "revisions": [
       "4c34ae3bfe1d49b73fe0fdf47bc9327fdcad5bb8"
     ],
     "branch": "develop"
+  }
+}
+
+### Upsource : ParticipantStateChangedFeedEventBean
+POST http://localhost:4000/api/upsource/hooks
+Content-Type: application/json;charset=utf-8
+
+{
+  "majorVersion": 2020,
+  "minorVersion": 1,
+  "projectId": "micro-workspaces",
+  "dataType": "ParticipantStateChangedFeedEventBean",
+  "data": {
+    "base": {
+      "userIds": [
+        {
+          "userId": "d61e7b88-7dd5-4f4d-a045-3fbfdba62d01",
+          "userName": "John",
+          "userEmail": "john@gmail.com"
+        }
+      ],
+      "reviewNumber": 31,
+      "reviewId": "MW-CR-31",
+      "date": 1648046592596,
+      "actor": {
+        "userId": "d61e7b88-7dd5-4f4d-a045-3fbfdba62d01",
+        "userName": "John",
+        "userEmail": "john@gmail.com"
+      }
+    },
+    "participant": {
+      "userId": "d61e7b88-7dd5-4f4d-a045-3fbfdba62d01",
+      "userName": "John",
+      "userEmail": "john@gmail.com"
+    },
+    "oldState": 1,
+    "newState": 2
   }
 }
 
