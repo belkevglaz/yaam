@@ -71,7 +71,7 @@ data class RevisionReviewInfoListDTO(val reviewInfo: Set<RevisionReviewInfoDTO>?
  * @property reviewInfo See [ShortReviewInfoDTO] parameters
  */
 @Serializable
-data class RevisionReviewInfoDTO(val reviewInfo: ShortReviewInfoDTO)
+data class RevisionReviewInfoDTO(val reviewInfo: ShortReviewInfoDTO? = null)
 
 /**
  * Response result.

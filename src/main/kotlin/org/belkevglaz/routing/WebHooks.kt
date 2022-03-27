@@ -57,20 +57,22 @@ fun Routing.teamcityWebhook() {
 		}
 
 		post("/~buildStatus") {
-			val request = call.receive<PublisherBuildStatus>()
+			launch {
+				val request = call.receive<PublisherBuildStatus>()
 
-			val json = Json {
-				allowStructuredMapKeys = true
-			}
+				val json = Json {
+					allowStructuredMapKeys = true
+				}
 
-			logger.info { json.encodeToString(request) }
+				logger.info { json.encodeToString(request) }
 
-			when (request.state) {
-				"success" -> {
-					val readyToClose = upsource.processBuildStatus(request)
+				when (request.state) {
+					"success" -> {
+						val readyToClose = upsource.processBuildStatus(request)
 
-					Finalizer().finalizeReviews(readyToClose)
+						Finalizer().finalizeReviews(readyToClose)
 
+					}
 				}
 			}
 			call.respondText { "Ok" }

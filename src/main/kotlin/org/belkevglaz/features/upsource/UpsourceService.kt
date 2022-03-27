@@ -36,10 +36,10 @@ class UpsourceService(appConfig: AppConfig) : KoinComponent {
 	 * @param reviewId Review Id
 	 * @param readyToClose flag to get or not reviews that are ready to close
 	 */
-	suspend fun fetchReviewById(reviewId: String, readyToClose: Boolean = true): ReviewDescriptorDTO {
+	suspend fun fetchReviewById(reviewId: String, readyToClose: Boolean = true): ReviewDescriptorDTO? {
 		val query =
 			(if (readyToClose) "state: open and #{ready to close}" else "state: open").plus(" and id: $reviewId")
-		return client.getReviews(ReviewsRequestDTO(query = query)).first()
+		return client.getReviews(ReviewsRequestDTO(query = query)).firstOrNull()
 	}
 
 	/**
@@ -72,7 +72,11 @@ class UpsourceService(appConfig: AppConfig) : KoinComponent {
 		}
 
 		return client.getRevisionReviewInfo(RevisionListDTO(projectId, revisionIds.toSet()))?.reviewInfo
-			?.mapNotNull { client.getReviewDetails(it.reviewInfo.reviewId) }?.toSet()
+			?.filter { it.reviewInfo != null }
+			?.mapNotNull {
+				client.getReviewDetails(it.reviewInfo?.reviewId
+					?: throw IllegalArgumentException("ReviewInfo [${it}] has empty reviewInfo"))
+			}?.toSet()
 			.also {
 				logger.info { "Found [${it?.size}] reviews that ready [$readyToClose] to close: ${it?.joinToString { r -> r.reviewId.reviewId }}] by revision [${commitId}]" }
 			} ?: emptySet()
@@ -191,7 +195,7 @@ class UpsourceService(appConfig: AppConfig) : KoinComponent {
 
 		if (event.newState != 2) return emptySet()
 
-		val review = fetchReviewById(event.base.reviewId ?: "")
+		val review = fetchReviewById(event.base.reviewId ?: "") ?: return emptySet()
 
 		return readyToCloseReviews(setOf(review))
 
